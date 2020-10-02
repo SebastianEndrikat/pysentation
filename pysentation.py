@@ -52,23 +52,48 @@ class presentation:
     self.slideCounter +=1
     return
 
-  def embeddImage(self,theFile,x,y,scale=1.):
+  def embeddImage(self,theFile,x,y,scale=1.,anchor='SW',thisax=None):
     # put an image on the slide
     # x,y is the lower left corner in fractions of page size
     im=mpimg.imread(theFile)
-    shape=im.shape
-    nx=shape[0]; ny=shape[1]
-    Lx=nx/float(self.dpi) # x-extent of the image in inches
-    Ly=ny/float(self.dpi) # y-extent of the image in inches
-    Lx /= self.slideWidth # x-extent of the imege in fraction of the slide
-    Ly /= self.slideHeight# y-extent of the imege in fraction of the slide
-    Lx*=scale
-    Ly*=scale
-    thisax=self.fig.add_axes([x,y,Lx,Ly]) # x,y,w,h
-    thisax.axis('off')
+    if thisax==None:
+        shape=im.shape
+        nx=shape[0]; ny=shape[1]
+        Lx=nx/float(self.dpi) # x-extent of the image in inches
+        Ly=ny/float(self.dpi) # y-extent of the image in inches
+        Lx /= self.slideWidth # x-extent of the imege in fraction of the slide
+        Ly /= self.slideHeight# y-extent of the imege in fraction of the slide
+        Lx*=scale
+        Ly*=scale
+        if anchor=='SW':
+            x=x; y=y
+        elif anchor=='C':
+            # Still defining the SW corner
+            x-=(Lx/2.)
+            y-=(Ly/2.)
+        else:
+            raise ValueError('Anchor for embeddImage not defined')
+        thisax=self.fig.add_axes([x,y,Lx,Ly]) # x,y,w,h
+        thisax.axis('off')
     thisax.imshow(im)
-    thisax.set_aspect('equal', adjustable='box', anchor='SW') # so that the passed x,y marks the lower left corner
-    return
+    thisax.set_aspect('equal', adjustable='box', anchor=anchor) # so that the passed x,y marks the lower left corner
+    # possible anchors: N,W,S,E, C, NW,NE,SW,SW. but this is just within the axes
+    return thisax
+
+  def drawArrow(self,x0,y0,x1,y1,color='k',lw=2.,ls='-',thisax=None):
+    if thisax==None:
+        # x,y are in fractions of the slide width/height
+        thisax=self.fig.add_axes([0,0,1.,1.]) # x,y,w,h
+        thisax.axis('off')
+    thisax.annotate('', xy=(x1, y1),
+             xycoords='axes fraction', # not 'data'
+             xytext=(x0, y0),
+             textcoords='axes fraction',
+             arrowprops=dict(
+#                     arrowstyle= '->',
+                     arrowstyle= 'simple',
+                     color=color,lw=lw,ls=ls))
+    return thisax
 
   def printSlideGrid(self):
     # print a grid on the current slide for aligning
